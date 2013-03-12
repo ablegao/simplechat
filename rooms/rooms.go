@@ -43,10 +43,11 @@ func AddRoom(w http.ResponseWriter, r *http.Request) {
 
 //room 创建消息 结构
 type Message struct {
-	MType    string
-	Content  string
-	UserInfo User
-	Time     string
+	MType       string
+	Content     string
+	UserInfo    User
+	Time        string
+	OnlineUsers map[string]string //在线用户id 
 }
 
 // roombase 信息。 
@@ -78,6 +79,14 @@ func (this *RoomBase) Run() {
 	}
 }
 
+func (this *RoomBase) getOnlineUsers() map[string]string {
+	users := make(map[string]string)
+	for k, v := range this.OnlineUsers {
+		users[k] = v.UserInfo.Name
+	}
+	return users
+}
+
 //用户类型
 type OnlineUser struct {
 	Send       chan Message
@@ -98,19 +107,35 @@ func BuildRoomSocket(ws *websocket.Conn) {
 	if room == "" {
 		return
 	}
+	if _, ok := ActiveChannel.Rooms[room]; ok {
 
-	onlinUser := OnlineUser{
-		Send:       make(chan Message),
-		InRoom:     room,
-		Connection: ws,
-		UserInfo:   User{Name: user},
+		onlinUser := OnlineUser{
+			Send:       make(chan Message),
+			InRoom:     room,
+			Connection: ws,
+			UserInfo:   User{Name: user},
+		}
+		ActiveChannel.Rooms[room].OnlineUsers[user] = &onlinUser
+
+		m := Message{
+			MType:       STATUS_MTYPE,
+			UserInfo:    onlinUser.UserInfo,
+			Time:        CreatedAt(),
+			Content:     "用户[" + user + "]进入了房间!",
+			OnlineUsers: make(map[string]string),
+		}
+		m.OnlineUsers = ActiveChannel.Rooms[room].getOnlineUsers()
+
+		// 消息提示
+		ActiveChannel.Rooms[room].Broadcast <- m
+
+		go onlinUser.PushToClient()
+		onlinUser.PullFromClient()
+		//当用户关闭socket 连接时， onlinUser.PullFromClient 将会因用户断开向下执行。 
+		onlinUser.killUserResource()
+	} else {
+		fmt.Println("On BuildRoomSocket: room[" + room + "] not exists!")
 	}
-	ActiveChannel.Rooms[room].OnlineUsers[user] = &onlinUser
-
-	go onlinUser.PushToClient()
-	onlinUser.PullFromClient()
-	//当用户关闭socket 连接时， onlinUser.PullFromClient 将会因用户断开向下执行。 
-	onlinUser.killUserResource()
 }
 
 //建立socket 连接
@@ -125,11 +150,13 @@ func (this *OnlineUser) PullFromClient() {
 		}
 
 		m := Message{
-			MType:    TEXT_MTYPE,
-			UserInfo: this.UserInfo,
-			Time:     CreatedAt(),
-			Content:  content,
+			MType:       TEXT_MTYPE,
+			UserInfo:    this.UserInfo,
+			Time:        CreatedAt(),
+			Content:     content,
+			OnlineUsers: make(map[string]string),
 		}
+
 		//客户端发送一条信息， 格式化后， 写入到Broadcast  , 这个ActionRoom 里面的一条公共消息池子 
 		ActiveChannel.Rooms[this.InRoom].Broadcast <- m
 		//this.InRoom.Broadcast <- m
@@ -151,7 +178,19 @@ func (this *OnlineUser) PushToClient() {
 func (this *OnlineUser) killUserResource() {
 	fmt.Printf("%s  close !\n", CreatedAt())
 	this.Connection.Close()
+
+	//离线消息
+	m := Message{
+		MType:       STATUS_MTYPE,
+		UserInfo:    this.UserInfo,
+		Time:        CreatedAt(),
+		Content:     "用户【" + this.UserInfo.Name + "】离开了房间!",
+		OnlineUsers: make(map[string]string),
+	}
 	close(this.Send)
 	delete(ActiveChannel.Rooms[this.InRoom].OnlineUsers, this.UserInfo.Name)
+
+	m.OnlineUsers = ActiveChannel.Rooms[this.InRoom].getOnlineUsers()
+	ActiveChannel.Rooms[this.InRoom].Broadcast <- m
 
 }

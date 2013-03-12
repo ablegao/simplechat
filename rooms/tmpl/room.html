@@ -4,7 +4,7 @@
 	
 		
         var sock = null;
-        var wsuri = "ws://localhost:1234/room/i?room={{.Room}}&user={{.User}}";
+        var wsuri = "ws://192.168.0.20:1234/room/i?room={{.Room}}&user={{.User}}";
 
         window.onload = function() {
 
@@ -23,20 +23,55 @@
             sock.onmessage = function(e) {
                 //console.log("message received: " + e.data);
 				
-				var oTest = document.getElementById("meg_box");
+				var oTest = document.getElementById("testlog");
+				
+		
+			
+				
+					var newNode = document.createElement("p");
+					newNode.innerHTML = e.data;
+					oTest.insertBefore(newNode,oTest.firstChild);
+				
+				
+				
+				
 				
 				var data = eval('(' +e.data + ")" );
 			
-				if (data.UserInfo != null ){
-					var newNode = document.createElement("p");
-					newNode.innerHTML = "<span style='color:#666666;'>"+data.UserInfo.Name +"  "+data.Time+"</span><br/>" + data.Content;
-					oTest.insertBefore(newNode,oTest.firstChild);
+				if (data.MType == "t" ){
+					UserMsg(data);
 				}
+				
+				if(data.MType == "s"){
+						
+					StatusMsg(data)
+				}
+				
 				
 				
             }
         };
-
+		function UserMsg (data){
+			var oTest = document.getElementById("meg_box");
+			var newNode = document.createElement("p");
+			newNode.innerHTML = "<span style='color:#666666;'>"+data.UserInfo.Name +"  "+data.Time+"</span><br/>" + data.Content;
+			oTest.insertBefore(newNode,oTest.firstChild);
+			
+		}
+		
+		function StatusMsg (data){
+			var oTest = document.getElementById("meg_box");
+			var newNode = document.createElement("p");
+			newNode.innerHTML = "<span style='color:#666666;'>  "+data.Time+"</span>" + data.Content;
+			oTest.insertBefore(newNode,oTest.firstChild);
+			
+			html = ""
+			for(x in data.OnlineUsers){
+				html+="<li>"+ x + "[在线]</li>";
+				
+			}
+			$("#onlineuser").html(html);
+		}
         function send() {
             var msg = $("#message").val();
 			if(msg ==""){
@@ -52,9 +87,9 @@
 <td valign="top" >
 <div id="meg_box" style="border:1px solid #000;width:400px;height:200px;overflow:auto;float:left;" ></div>
 </td>
-<td>
+<td valign="top">
 在线用户
-<div id="onlineuser">
+<div id="onlineuser" style="width:200px;">
 
 </div>
 </td>
@@ -66,8 +101,8 @@
 <p>
 <input type="text" value="" id="message"  > <input type="button" onclick="send()" value="发送">
 </p>
-
-
+<p1>测试日志</p1>
+<div id="testlog"></div>
 
 {{template "footer"}}
 {{end}}

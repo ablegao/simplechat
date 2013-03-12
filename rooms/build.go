@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 )
 
 var serverAddr string
@@ -28,6 +29,7 @@ func init() {
 
 func main() {
 	//RoomTestServerStart()
+	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	RoomServerStart()
 }
 

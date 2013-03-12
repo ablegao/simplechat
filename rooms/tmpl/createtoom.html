@@ -7,7 +7,7 @@
 	<div>
 		{{with .DataRows}}
 		{{range $k,$v:=.}}
-		<li><a  target ="_blank" href="javascript:openRoom('{{$k}}');">{{$v}}</a></li>
+		<li><a href="#" onclick="openRoom('{{$k}}');">{{$v}}</a></li>
 		{{end}}
 		{{end}}
 	</div>
