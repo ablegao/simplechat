@@ -1,0 +1,61 @@
+{{define "content"}}{{template "header"}}
+   
+	{{ if .Email  }}
+		<script type="text/javascript">
+	
+	
+		
+        var sock = null;
+        var wsuri = "ws://127.0.0.1:1234/games?email={{.Email}}";
+
+        window.onload = function() {
+
+            console.log("onload");
+
+            sock = new WebSocket(wsuri);
+
+            sock.onopen = function() {
+                console.log("connected to " + wsuri);
+            }
+
+            sock.onclose = function(e) {
+                console.log("connection closed (" + e.code + ")");
+            }
+
+            sock.onmessage = function(e) {
+                //console.log("message received: " + e.data);
+				var oTest = document.getElementById("meg_box");
+				
+				var data = eval('(' +e.data + ")" );
+			
+				if (data.TextMessage.UserInfo != null ){
+					var newNode = document.createElement("p");
+					newNode.innerHTML = data.TextMessage.UserInfo.Name + ":" + data.TextMessage.Content;
+					oTest.appendChild(newNode);
+				}
+            }
+        }
+
+        function send() {
+            var msg = document.getElementById('message').value;
+            sock.send(msg);
+        };
+    </script>
+	
+	
+    <h1>WebSocket Echo Test</h1>
+	<div id="meg_box"></div>
+        <p>
+            Message: <input id="message" type="text" value="Hello, world!">
+        </p>
+
+    <button onclick="send();">Send Message</button>
+	{{ else }}	
+		<form method="GET">
+		<input type="text" value="" name="email"> <input type="submit" value="Login" >
+		</form>
+	 
+	
+	{{ end }}
+{{template "footer"}}
+{{end}}

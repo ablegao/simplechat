@@ -1,0 +1,11 @@
+.*.swp
+.DS_Store
+.svn
+**/.DS_Store
+**/.svn
+**/.*.swp
+_project
+**.pyc
+*.pyc
+**/__pycache
+.cache

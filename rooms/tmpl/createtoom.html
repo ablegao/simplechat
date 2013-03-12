@@ -1,0 +1,52 @@
+{{define "content"}}{{template "header"}}
+	
+	<p>
+	名字： <input type="text" id="username" value="">
+	</p>
+	
+	<div>
+		{{with .DataRows}}
+		{{range $k,$v:=.}}
+		<li><a  target ="_blank" href="javascript:openRoom('{{$k}}');">{{$v}}</a></li>
+		{{end}}
+		{{end}}
+	</div>
+	<br/>
+	<h2>创建房间</h2>
+	<p>
+	<form method="post" action="/room/add" id="createpost">
+		<input type="text" name="rn" id="rn" value="">
+		<select name="mapid" id="mapid">
+			<option value="map1">map1</option>
+		</select>
+		<input type="button" id="but" value="创建" >
+	</form>	
+	</p>
+	
+	
+	
+	<script>
+	$("#but").click(function(){
+		$.post("/room/add" , $("#createpost").serialize()  , function(data){
+			//alert(data.error);
+			if(data.error == 0){
+				location.reload();
+			}else{
+				alert(data.token);
+			}
+		},"json");
+	});
+	
+	function openRoom(room){
+		user = $("#username").val();
+		if(user == ""){
+			
+			alert("请先填写一个名字!");
+			return false;
+		}
+		url = "/test/room/i?room="+room+"&user="+user;
+		window.open(url);
+	}
+	</script>
+{{template "footer"}}
+{{end}}

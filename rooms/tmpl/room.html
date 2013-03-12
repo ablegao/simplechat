@@ -1,0 +1,73 @@
+{{define "content"}}{{template "header"}}
+<script type="text/javascript">
+	
+	
+		
+        var sock = null;
+        var wsuri = "ws://localhost:1234/room/i?room={{.Room}}&user={{.User}}";
+
+        window.onload = function() {
+
+            console.log("onload");
+
+            sock = new WebSocket(wsuri);
+
+            sock.onopen = function() {
+                console.log("connected to " + wsuri);
+            }
+
+            sock.onclose = function(e) {
+                console.log("connection closed (" + e.code + ")");
+            }
+
+            sock.onmessage = function(e) {
+                //console.log("message received: " + e.data);
+				
+				var oTest = document.getElementById("meg_box");
+				
+				var data = eval('(' +e.data + ")" );
+			
+				if (data.UserInfo != null ){
+					var newNode = document.createElement("p");
+					newNode.innerHTML = "<span style='color:#666666;'>"+data.UserInfo.Name +"  "+data.Time+"</span><br/>" + data.Content;
+					oTest.insertBefore(newNode,oTest.firstChild);
+				}
+				
+				
+            }
+        };
+
+        function send() {
+            var msg = $("#message").val();
+			if(msg ==""){
+				return false;
+			}
+            sock.send(msg);
+        };
+    </script>
+<p>
+
+<table>
+<tr>
+<td valign="top" >
+<div id="meg_box" style="border:1px solid #000;width:400px;height:200px;overflow:auto;float:left;" ></div>
+</td>
+<td>
+在线用户
+<div id="onlineuser">
+
+</div>
+</td>
+
+</tr>
+
+</table>
+</p>
+<p>
+<input type="text" value="" id="message"  > <input type="button" onclick="send()" value="发送">
+</p>
+
+
+
+{{template "footer"}}
+{{end}}
