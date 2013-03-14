@@ -1,9 +1,22 @@
 {{define "content"}}{{template "header"}}
 	
+
+	<h2>1. 创建一个房间</h2>
 	<p>
+	<form method="post" action="/room/add" id="createpost">
+		房间名:<input type="text" name="rn" id="rn" value="">
+		地图: <select name="mapid" id="mapid">
+			<option value="map1">map1</option>
+		</select>
+		<input type="button" id="but" value="创建" >
+	</form>	
+	</p>
+	<h2>2. 填写一个用来显示的用户名 </h2>
+		<p>
 	名字： <input type="text" id="username" value="">
 	</p>
 	
+	<h2>3. 选择要进入的房间名称</h2>
 	<div>
 		{{with .DataRows}}
 		{{range $k,$v:=.}}
@@ -12,18 +25,6 @@
 		{{end}}
 	</div>
 	<br/>
-	<h2>创建房间</h2>
-	<p>
-	<form method="post" action="/room/add" id="createpost">
-		<input type="text" name="rn" id="rn" value="">
-		<select name="mapid" id="mapid">
-			<option value="map1">map1</option>
-		</select>
-		<input type="button" id="but" value="创建" >
-	</form>	
-	</p>
-	
-	
 	
 	<script>
 	$("#but").click(function(){

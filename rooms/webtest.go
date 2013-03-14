@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 )
@@ -11,10 +10,10 @@ type HTMLData struct {
 }
 
 func init() {
-	fmt.Println("insert test website")
+	Log.Println("Create a test server on http://localhost/test")
 
 	http.HandleFunc("/test/room/i", WEBRoomHome)
-	http.HandleFunc("/test/home", WEBCreateRoom)
+	http.HandleFunc("/test", WEBCreateRoom)
 }
 
 // 这个页面用来存放一些测试用html5界面

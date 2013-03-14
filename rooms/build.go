@@ -4,9 +4,7 @@ package main
 
 import (
 	//"code.google.com/p/go.net/websocket"
-
-	//	"fmt"
-	"log"
+	//"io"
 	"net/http"
 	"net/http/httptest"
 	"runtime"
@@ -28,8 +26,12 @@ func init() {
 }
 
 func main() {
-	//RoomTestServerStart()
 	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
+
+	//Log.SetOutput(io.MultiWriter(logf, os.Stdout))
+
+	Log.Println("ccccccc")
+
 	RoomServerStart()
 }
 
@@ -37,14 +39,14 @@ func main() {
 func RoomTestServerStart() {
 	server := httptest.NewServer(nil)
 	serverAddr = server.Listener.Addr().String()
-	log.Print("Test WebSocket server listening on ", serverAddr)
+	Log.Print("Test WebSocket server listening on ", serverAddr)
 
 }
 
 //正式服务器
 func RoomServerStart() {
 	if serverAddr := http.ListenAndServe(":1234", nil); serverAddr != nil {
-		log.Fatal("ListenAndServe:", serverAddr)
+		Log.Fatal("ListenAndServe:", serverAddr)
 	}
 }
 

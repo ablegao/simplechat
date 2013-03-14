@@ -25,7 +25,7 @@ func AddRoom(w http.ResponseWriter, r *http.Request) {
 	Room := RoomBase{
 		Name:        roomName,
 		MapId:       mapId,
-		Broadcast:   make(chan Message),
+		Broadcast:   make(chan interface{}),
 		RoomClose:   make(chan bool),
 		OnlineUsers: make(map[string]*OnlineUser),
 		Token:       str,
@@ -41,20 +41,11 @@ func AddRoom(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//room 创建消息 结构
-type Message struct {
-	MType       string
-	Content     string
-	UserInfo    User
-	Time        string
-	OnlineUsers map[string]string //在线用户id 
-}
-
 // roombase 信息。 
 type RoomBase struct {
 	Name        string                 //room 名称
 	MapId       string                 // 使用地图
-	Broadcast   chan Message           // 消息队列
+	Broadcast   chan interface{}       // 消息队列
 	RoomClose   chan bool              // 关闭信号
 	Token       string                 // 房间id 
 	OnlineUsers map[string]*OnlineUser //在线用户
@@ -87,18 +78,6 @@ func (this *RoomBase) getOnlineUsers() map[string]string {
 	return users
 }
 
-//用户类型
-type OnlineUser struct {
-	Send       chan Message
-	InRoom     string
-	Connection *websocket.Conn
-	UserInfo   User
-}
-
-type User struct {
-	Name string
-}
-
 // 建立客户端连接
 func BuildRoomSocket(ws *websocket.Conn) {
 	room := ws.Request().URL.Query().Get("room")
@@ -110,7 +89,7 @@ func BuildRoomSocket(ws *websocket.Conn) {
 	if _, ok := ActiveChannel.Rooms[room]; ok {
 
 		onlinUser := OnlineUser{
-			Send:       make(chan Message),
+			Send:       make(chan interface{}),
 			InRoom:     room,
 			Connection: ws,
 			UserInfo:   User{Name: user},
@@ -136,61 +115,4 @@ func BuildRoomSocket(ws *websocket.Conn) {
 	} else {
 		fmt.Println("On BuildRoomSocket: room[" + room + "] not exists!")
 	}
-}
-
-//建立socket 连接
-func (this *OnlineUser) PullFromClient() {
-	fmt.Printf("%s PullFromClient !\n", CreatedAt())
-	for {
-		var content string
-		err := websocket.Message.Receive(this.Connection, &content)
-		// If user closes or refreshes the browser, a err will occur
-		if err != nil {
-			return
-		}
-
-		m := Message{
-			MType:       TEXT_MTYPE,
-			UserInfo:    this.UserInfo,
-			Time:        CreatedAt(),
-			Content:     content,
-			OnlineUsers: make(map[string]string),
-		}
-
-		//客户端发送一条信息， 格式化后， 写入到Broadcast  , 这个ActionRoom 里面的一条公共消息池子 
-		ActiveChannel.Rooms[this.InRoom].Broadcast <- m
-		//this.InRoom.Broadcast <- m
-	}
-}
-
-// 向客户端发送信息
-func (this *OnlineUser) PushToClient() {
-	fmt.Printf("%s PushToClient\n ", CreatedAt())
-	for b := range this.Send {
-		err := websocket.JSON.Send(this.Connection, b)
-		if err != nil {
-			break
-		}
-	}
-}
-
-//关闭用户连接
-func (this *OnlineUser) killUserResource() {
-	fmt.Printf("%s  close !\n", CreatedAt())
-	this.Connection.Close()
-
-	//离线消息
-	m := Message{
-		MType:       STATUS_MTYPE,
-		UserInfo:    this.UserInfo,
-		Time:        CreatedAt(),
-		Content:     "用户【" + this.UserInfo.Name + "】离开了房间!",
-		OnlineUsers: make(map[string]string),
-	}
-	close(this.Send)
-	delete(ActiveChannel.Rooms[this.InRoom].OnlineUsers, this.UserInfo.Name)
-
-	m.OnlineUsers = ActiveChannel.Rooms[this.InRoom].getOnlineUsers()
-	ActiveChannel.Rooms[this.InRoom].Broadcast <- m
-
 }
